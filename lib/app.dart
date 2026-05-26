@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 
 class BolIlBwaApp extends StatelessWidget {
-  const BolIlBwaApp({Key? key}) : super(key: key);
+  const BolIlBwaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
