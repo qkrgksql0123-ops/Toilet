@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볼일봐 🚻 — 프로젝트 발표</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --border: #1e2d45;
+  --glow: rgba(59,130,246,0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Nanum Gothic', sans-serif;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── 히어로 ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  padding: 4rem 2rem;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 70%);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(59,130,246,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(6,182,212,0.06) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.hero-emoji {
+  font-size: 6rem;
+  margin-bottom: 1rem;
+  animation: float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(59,130,246,0.4));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+.hero-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding: 0.3rem 1rem;
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 100px;
+  display: inline-block;
+}
+
+.hero h1 {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+
+.hero-sub {
+  font-size: 1.25rem;
+  color: var(--text2);
+  margin-bottom: 3rem;
+  max-width: 500px;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.meta-chip {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text2);
+  padding: 0.4rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.meta-chip span { color: var(--accent); }
+
+/* ── 섹션 공통 ── */
+section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 5rem 2rem;
+}
+
+.section-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  max-width: 60px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.section-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  margin-bottom: 3rem;
+  color: var(--text);
+}
+
+.section-title em {
+  font-style: normal;
+  color: var(--accent2);
+}
+
+/* ── 구분선 ── */
+.divider {
+  max-width: 1100px;
+  margin: 0 auto;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* ── 앱 소개 카드 ── */
+.intro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.intro-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.intro-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+
+.intro-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.intro-card:hover::before { opacity: 1; }
+
+.card-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.card-desc {
+  font-size: 0.9rem;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+.card-badge {
+  display: inline-block;
+  margin-top: 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  background: rgba(59,130,246,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(59,130,246,0.3);
+}
+
+/* ── ADR 섹션 ── */
+.adr-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.adr-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.adr-item:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.adr-code {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.adr-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.adr-content p {
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+
+.adr-pick {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── 기술 스택 ── */
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stack-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.stack-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent2);
+}
+
+.stack-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+.stack-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+.stack-desc { font-size: 0.8rem; color: var(--text2); }
+.stack-adr {
+  margin-top: 0.75rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text3);
+}
+
+/* ── 아키텍처 ── */
+.arch-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.arch-layer {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  border-bottom: 1px solid var(--border);
+}
+
+.arch-layer:last-child { border-bottom: none; }
+
+.layer-name {
+  padding: 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.layer-path {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.layer-content {
+  padding: 1.5rem;
+  border-left: 1px solid var(--border);
+}
+
+.layer-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.layer-item {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+/* ── DB 구조 ── */
+.db-code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.db-key { color: var(--accent2); }
+.db-val { color: var(--accent3); }
+.db-comment { color: var(--text3); }
+.db-collection { color: var(--warn); font-weight: 700; }
+
+/* ── WBS ── */
+.wbs-phases { display: flex; flex-direction: column; gap: 1rem; }
+
+.wbs-phase {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.phase-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.phase-header:hover { background: var(--surface2); }
+
+.phase-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.phase-title { font-weight: 700; font-size: 1rem; flex: 1; }
+
+.phase-meta {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+
+.phase-arrow {
+  font-size: 0.8rem;
+  color: var(--text3);
+  transition: transform 0.3s;
+}
+
+.phase-tasks {
+  border-top: 1px solid var(--border);
+  display: none;
+}
+
+.phase-tasks.open { display: block; }
+
+.task-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 80px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.85rem;
+  align-items: center;
+}
+
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: var(--surface2); }
+
+.task-code {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text3);
+}
+
+.task-name { color: var(--text); }
+.task-output { color: var(--text2); font-size: 0.78rem; font-style: italic; }
+
+.priority-high { color: var(--danger); font-weight: 700; font-size: 0.75rem; font-family: 'Space Mono', monospace; }
+.priority-mid  { color: var(--warn);   font-size: 0.75rem; font-family: 'Space Mono', monospace; }
+.priority-low  { color: var(--text3);  font-size: 0.75rem; font-family: 'Space Mono', monospace; }
+
+/* ── 체크리스트 ── */
+.checklist { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.check-item.done { border-color: rgba(16,185,129,0.3); }
+.check-item.todo { border-color: var(--border); }
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.check-item.done .check-box { background: rgba(16,185,129,0.2); color: var(--accent3); border: 1px solid rgba(16,185,129,0.4); }
+.check-item.todo .check-box { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+.check-item.done .check-label { color: var(--text2); }
+.check-item.todo .check-label { color: var(--text); }
+
+/* ── 푸터 ── */
+footer {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+footer .repo {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ── 스크롤 애니메이션 ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── 반응형 ── */
+@media (max-width: 640px) {
+  .adr-item { grid-template-columns: 1fr; gap: 0.75rem; }
+  .arch-layer { grid-template-columns: 1fr; }
+  .layer-content { border-left: none; border-top: 1px solid var(--border); }
+  .task-row { grid-template-columns: 80px 1fr; }
+  .task-output, .task-code { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── 히어로 ── -->
+<div class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-emoji">🚻</div>
+  <div class="hero-label">Vibe Coding Project — Week 11</div>
+  <h1>볼일봐</h1>
+  <p class="hero-sub">공중화장실 지도 + 청결도 리뷰 + 잠긴 화장실 비번 공유 앱</p>
+  <div class="hero-meta">
+    <div class="meta-chip">레포 <span>Toilet</span></div>
+    <div class="meta-chip">플랫폼 <span>Flutter 3.44</span></div>
+    <div class="meta-chip">DB <span>Firebase</span></div>
+    <div class="meta-chip">지도 <span>Google Maps</span></div>
+  </div>
+</div>
+
+<!-- ── 앱 소개 ── -->
+<section class="fade-in">
+  <div class="section-label">01 / 앱 소개</div>
+  <h2 class="section-title">왜 <em>볼일봐</em>인가?</h2>
+  <div class="intro-grid">
+    <div class="intro-card">
+      <span class="card-icon">🗺️</span>
+      <div class="card-title">주변 화장실 지도</div>
+      <div class="card-desc">행정안전부 공공데이터 API로 전국 공중화장실 위치를 Google Maps 핀으로 표시</div>
+      <span class="card-badge">MVP</span>
+    </div>
+    <div class="intro-card">
+      <span class="card-icon">⭐</span>
+      <div class="card-title">청결도 별점 / 리뷰</div>
+      <div class="card-desc">사용자가 직접 청결도를 평가하고 후기를 남겨 다른 사용자에게 실시간으로 공유</div>
+      <span class="card-badge">MVP</span>
+    </div>
+    <div class="intro-card">
+      <span class="card-icon">❤️</span>
+      <div class="card-title">즐겨찾기</div>
+      <div class="card-desc">자주 가는 화장실을 즐겨찾기에 저장해서 빠르게 접근</div>
+      <span class="card-badge">MVP</span>
+    </div>
+    <div class="intro-card">
+      <span class="card-icon">🔐</span>
+      <div class="card-title">비번 공유</div>
+      <div class="card-desc">잠긴 화장실의 비밀번호를 커뮤니티로 공유. 좋아요로 신뢰도를 표시하는 차별화 기능</div>
+      <span class="card-badge">MVP · 독창적</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── ADR ── -->
+<section class="fade-in">
+  <div class="section-label">02 / ADR</div>
+  <h2 class="section-title">기술 결정 <em>이유</em></h2>
+  <div class="adr-list">
+    <div class="adr-item">
+      <div class="adr-code">ADR-0000</div>
+      <div class="adr-content">
+        <h3>앱 주제 선택</h3>
+        <p>공중화장실 지도 앱 — 실생활 필요, 공공데이터 활용, 비번 공유라는 독창적 기능</p>
+      </div>
+      <div class="adr-pick">볼일봐</div>
+    </div>
+    <div class="adr-item">
+      <div class="adr-code">ADR-0001</div>
+      <div class="adr-content">
+        <h3>프론트엔드 플랫폼</h3>
+        <p>한 코드로 iOS/Android 동시 지원. Google Maps 공식 Flutter 패키지 존재. Hot Reload로 빠른 개발</p>
+      </div>
+      <div class="adr-pick">Flutter 3.x</div>
+    </div>
+    <div class="adr-item">
+      <div class="adr-code">ADR-0002</div>
+      <div class="adr-content">
+        <h3>상태관리</h3>
+        <p>Provider의 공식 후속작. GPS 스트림과 Firestore 실시간 데이터를 StreamProvider로 자연스럽게 연동</p>
+      </div>
+      <div class="adr-pick">Riverpod 2.x</div>
+    </div>
+    <div class="adr-item">
+      <div class="adr-code">ADR-0003</div>
+      <div class="adr-content">
+        <h3>백엔드 & 데이터베이스</h3>
+        <p>서버 코드 불필요. 실시간 동기화로 리뷰/비번이 즉시 반영. Flutter 공식 지원(FlutterFire)</p>
+      </div>
+      <div class="adr-pick">Firebase</div>
+    </div>
+    <div class="adr-item">
+      <div class="adr-code">ADR-0004</div>
+      <div class="adr-content">
+        <h3>지도 API</h3>
+        <p>Flutter 공식 패키지 존재. 카카오/네이버는 비공식이라 연동 복잡. 공공데이터 좌표와 바로 연동 가능</p>
+      </div>
+      <div class="adr-pick">Google Maps</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── 기술 스택 ── -->
+<section class="fade-in">
+  <div class="section-label">03 / 기술 스택</div>
+  <h2 class="section-title">전체 <em>스택</em> 구성</h2>
+  <div class="stack-grid">
+    <div class="stack-card">
+      <span class="stack-icon">💙</span>
+      <div class="stack-name">Flutter 3.44</div>
+      <div class="stack-desc">iOS / Android 동시 지원 프론트엔드</div>
+      <div class="stack-adr">ADR-0001</div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🌊</span>
+      <div class="stack-name">Riverpod 2.x</div>
+      <div class="stack-desc">StreamProvider 기반 상태관리</div>
+      <div class="stack-adr">ADR-0002</div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🔥</span>
+      <div class="stack-name">Firebase</div>
+      <div class="stack-desc">Firestore + Authentication</div>
+      <div class="stack-adr">ADR-0003</div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🗺️</span>
+      <div class="stack-name">Google Maps</div>
+      <div class="stack-desc">공식 Flutter 패키지 지도 API</div>
+      <div class="stack-adr">ADR-0004</div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🏛️</span>
+      <div class="stack-name">공공데이터 API</div>
+      <div class="stack-desc">행정안전부 전국 화장실 현황</div>
+      <div class="stack-adr">data.go.kr</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── 아키텍처 ── -->
+<section class="fade-in">
+  <div class="section-label">04 / 아키텍처</div>
+  <h2 class="section-title">4계층 <em>레이어드</em> 구조</h2>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="layer-name" style="background:rgba(59,130,246,0.08);">
+        Presentation
+        <span class="layer-path">lib/presentation/</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-items">
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">map_screen</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">toilet_detail_screen</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">review_screen</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">favorites_screen</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">password_screen</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">toilet_marker</span>
+          <span class="layer-item" style="color:#3b82f6;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.08)">rating_widget</span>
+        </div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name" style="background:rgba(6,182,212,0.08);">
+        Application
+        <span class="layer-path">lib/application/</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-items">
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">map_view_model</span>
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">toilet_view_model</span>
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">search_nearby_toilets</span>
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">add_review</span>
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">share_password</span>
+          <span class="layer-item" style="color:#06b6d4;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.08)">toggle_favorite</span>
+        </div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name" style="background:rgba(16,185,129,0.08);">
+        Domain
+        <span class="layer-path">lib/domain/</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-items">
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">toilet.dart</span>
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">review.dart</span>
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">password_share.dart</span>
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">distance_service</span>
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">rating_service</span>
+          <span class="layer-item" style="color:#10b981;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">toilet_rules</span>
+        </div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name" style="background:rgba(245,158,11,0.08);">
+        Data
+        <span class="layer-path">lib/data/</span>
+      </div>
+      <div class="layer-content">
+        <div class="layer-items">
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">toilet_repository</span>
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">review_repository</span>
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">password_repository</span>
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">firebase_service</span>
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">public_toilet_api</span>
+          <span class="layer-item" style="color:#f59e0b;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.08)">favorites_cache</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── DB 구조 ── -->
+<section class="fade-in">
+  <div class="section-label">05 / 데이터베이스</div>
+  <h2 class="section-title">Firestore <em>데이터 구조</em></h2>
+  <div class="db-code">
+<span class="db-collection">toilets/</span>
+  <span class="db-key">{toiletId}/</span>
+    <span class="db-key">name</span>: <span class="db-val">"서울역 공중화장실"</span>
+    <span class="db-key">lat</span>: <span class="db-val">37.5547</span>
+    <span class="db-key">lng</span>: <span class="db-val">126.9706</span>
+    <span class="db-key">address</span>: <span class="db-val">"서울시 중구 ..."</span>
+    <span class="db-key">avgRating</span>: <span class="db-val">3.8</span>
+    <span class="db-key">isLocked</span>: <span class="db-val">false</span>  <span class="db-comment">← 잠긴 화장실 여부</span>
+
+    <span class="db-collection">reviews/</span>
+      <span class="db-key">{reviewId}/</span>
+        <span class="db-key">userId</span>: <span class="db-val">string</span>
+        <span class="db-key">rating</span>: <span class="db-val">1~5</span>
+        <span class="db-key">comment</span>: <span class="db-val">string</span>
+        <span class="db-key">createdAt</span>: <span class="db-val">timestamp</span>
+
+    <span class="db-collection">passwords/</span>
+      <span class="db-key">{pwId}/</span>
+        <span class="db-key">password</span>: <span class="db-val">string</span>  <span class="db-comment">← 잠긴 화장실 비번</span>
+        <span class="db-key">userId</span>: <span class="db-val">string</span>
+        <span class="db-key">likes</span>: <span class="db-val">number</span>   <span class="db-comment">← 좋아요 = 신뢰도</span>
+        <span class="db-key">createdAt</span>: <span class="db-val">timestamp</span>
+
+<span class="db-collection">users/</span>
+  <span class="db-key">{userId}/</span>
+    <span class="db-collection">favorites/</span>
+      <span class="db-key">{toiletId}</span>: <span class="db-val">true</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── WBS ── -->
+<section class="fade-in">
+  <div class="section-label">06 / WBS</div>
+  <h2 class="section-title">작업 분해 <em>구조</em></h2>
+  <div class="wbs-phases">
+
+    <div class="wbs-phase">
+      <div class="phase-header" onclick="toggle(this)">
+        <div class="phase-num" style="background:rgba(59,130,246,0.15);color:#3b82f6;">1</div>
+        <div class="phase-title">기획 (Planning)</div>
+        <div class="phase-meta">5개 작업 · 5일</div>
+        <div class="phase-arrow">▼</div>
+      </div>
+      <div class="phase-tasks open">
+        <div class="task-row"><div class="task-code">1.1</div><div class="task-name">앱 주제 확정</div><div class="task-output">기획 회의록</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">1.2</div><div class="task-name">핵심 기능 정의</div><div class="task-output">기능 목록서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">1.3</div><div class="task-name">ADR-0000~0004 작성</div><div class="task-output">ADR 통합문서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">1.4</div><div class="task-name">WBS 작성</div><div class="task-output">WBS 문서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">1.5</div><div class="task-name">GitHub Toilet 레포 생성</div><div class="task-output">GitHub Repo</div><div class="priority-mid">중간</div></div>
+      </div>
+    </div>
+
+    <div class="wbs-phase">
+      <div class="phase-header" onclick="toggle(this)">
+        <div class="phase-num" style="background:rgba(16,185,129,0.15);color:#10b981;">2</div>
+        <div class="phase-title">설계 (Architecture & Design)</div>
+        <div class="phase-meta">5개 작업 · 7일</div>
+        <div class="phase-arrow">▼</div>
+      </div>
+      <div class="phase-tasks open">
+        <div class="task-row"><div class="task-code">2.1</div><div class="task-name">4계층 아키텍처 설계</div><div class="task-output">architecture.md</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">2.2</div><div class="task-name">디렉토리 구조 확정</div><div class="task-output">디렉토리 트리</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">2.3</div><div class="task-name">Firestore DB 스키마 설계</div><div class="task-output">DB 설계서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">2.4</div><div class="task-name">5개 화면 와이어프레임</div><div class="task-output">와이어프레임</div><div class="priority-mid">중간</div></div>
+        <div class="task-row"><div class="task-code">2.5</div><div class="task-name">setup.md 작성</div><div class="task-output">setup.md</div><div class="priority-mid">중간</div></div>
+      </div>
+    </div>
+
+    <div class="wbs-phase">
+      <div class="phase-header" onclick="toggle(this)">
+        <div class="phase-num" style="background:rgba(245,158,11,0.15);color:#f59e0b;">3</div>
+        <div class="phase-title">개발 (Development)</div>
+        <div class="phase-meta">26개 작업 · 21일</div>
+        <div class="phase-arrow">▶</div>
+      </div>
+      <div class="phase-tasks">
+        <div class="task-row"><div class="task-code">3.1.1</div><div class="task-name">Flutter 프로젝트 생성</div><div class="task-output">Hello World 빌드</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.1.2</div><div class="task-name">Firebase 연동</div><div class="task-output">google-services.json</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.1.3</div><div class="task-name">Google Maps 연동</div><div class="task-output">지도 표시 확인</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.1.4</div><div class="task-name">공공데이터 API 연동</div><div class="task-output">API 응답 확인</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.2</div><div class="task-name">Domain 레이어 — 엔티티/서비스</div><div class="task-output">.dart 파일 5개</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.3</div><div class="task-name">Data 레이어 — Repository/API</div><div class="task-output">.dart 파일 5개</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.4</div><div class="task-name">Application — ViewModel/UseCase</div><div class="task-output">.dart 파일 6개</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.5.1</div><div class="task-name">MapScreen — 지도 + 핀 마커</div><div class="task-output">map_screen.dart</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.5.2</div><div class="task-name">ToiletDetailScreen</div><div class="task-output">toilet_detail_screen.dart</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.5.3</div><div class="task-name">ReviewScreen — 별점 작성</div><div class="task-output">review_screen.dart</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.5.4</div><div class="task-name">FavoritesScreen</div><div class="task-output">favorites_screen.dart</div><div class="priority-mid">중간</div></div>
+        <div class="task-row"><div class="task-code">3.5.5</div><div class="task-name">PasswordScreen — 비번 공유</div><div class="task-output">password_screen.dart</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">3.5.6</div><div class="task-name">구글 로그인 연동</div><div class="task-output">로그인 화면</div><div class="priority-high">높음</div></div>
+      </div>
+    </div>
+
+    <div class="wbs-phase">
+      <div class="phase-header" onclick="toggle(this)">
+        <div class="phase-num" style="background:rgba(139,92,246,0.15);color:#8b5cf6;">4</div>
+        <div class="phase-title">테스트 (Testing)</div>
+        <div class="phase-meta">7개 작업 · 7일</div>
+        <div class="phase-arrow">▶</div>
+      </div>
+      <div class="phase-tasks">
+        <div class="task-row"><div class="task-code">4.1</div><div class="task-name">지도 핀 표시 확인</div><div class="task-output">테스트 결과서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">4.2</div><div class="task-name">별점/리뷰 실시간 반영 확인</div><div class="task-output">테스트 결과서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">4.3</div><div class="task-name">즐겨찾기 동작 확인</div><div class="task-output">테스트 결과서</div><div class="priority-mid">중간</div></div>
+        <div class="task-row"><div class="task-code">4.4</div><div class="task-name">비번 공유 + 좋아요 확인</div><div class="task-output">테스트 결과서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">4.5</div><div class="task-name">구글 로그인 흐름 확인</div><div class="task-output">테스트 결과서</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">4.6</div><div class="task-name">공공데이터 + Firestore 병합 확인</div><div class="task-output">통합 테스트 결과</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">4.7</div><div class="task-name">UI/UX 화면 점검</div><div class="task-output">스크린샷</div><div class="priority-mid">중간</div></div>
+      </div>
+    </div>
+
+    <div class="wbs-phase">
+      <div class="phase-header" onclick="toggle(this)">
+        <div class="phase-num" style="background:rgba(239,68,68,0.15);color:#ef4444;">5</div>
+        <div class="phase-title">배포 & 발표</div>
+        <div class="phase-meta">5개 작업 · 5일</div>
+        <div class="phase-arrow">▶</div>
+      </div>
+      <div class="phase-tasks">
+        <div class="task-row"><div class="task-code">5.1</div><div class="task-name">README.md 최종 작성</div><div class="task-output">README.md</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">5.2</div><div class="task-name">GitHub main 브랜치 머지</div><div class="task-output">GitHub push</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">5.3</div><div class="task-name">발표 슬라이드 작성</div><div class="task-output">발표 슬라이드</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">5.4</div><div class="task-name">ADR 60초 말하기 연습</div><div class="task-output">발표 연습</div><div class="priority-high">높음</div></div>
+        <div class="task-row"><div class="task-code">5.5</div><div class="task-name">APK 빌드</div><div class="task-output">APK 파일</div><div class="priority-mid">중간</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── 진행 상태 ── -->
+<section class="fade-in">
+  <div class="section-label">07 / 진행 상태</div>
+  <h2 class="section-title">현재 <em>체크리스트</em></h2>
+  <div class="checklist">
+    <div class="check-item done"><div class="check-box">✓</div><div class="check-label">ADR-0000~0004 작성 완료</div></div>
+    <div class="check-item done"><div class="check-box">✓</div><div class="check-label">WBS 작성 완료</div></div>
+    <div class="check-item done"><div class="check-box">✓</div><div class="check-label">architecture.md 작성 완료</div></div>
+    <div class="check-item done"><div class="check-box">✓</div><div class="check-label">setup.md 작성 완료</div></div>
+    <div class="check-item done"><div class="check-box">✓</div><div class="check-label">CLAUDE.md 작성 완료</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">GitHub Toilet 레포 생성 & 파일 업로드</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">Flutter 프로젝트 생성 (flutter create Toilet)</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">Firebase 연동 (google-services.json)</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">Google Maps API 연동</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">공공데이터 API 연동</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">5개 화면 개발</div></div>
+    <div class="check-item todo"><div class="check-box">○</div><div class="check-label">테스트 & 발표 준비</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>볼일봐 🚻 — 공중화장실 지도 앱</p>
+  <p style="margin-top:0.5rem">레포: <a class="repo" href="https://github.com/qkrgksql0123-ops/Toilet" target="_blank">github.com/qkrgksql0123-ops/Toilet</a> · Vibe Coding Project Week 11</p>
+</footer>
+
+<script>
+// WBS 토글
+function toggle(header) {
+  const tasks = header.nextElementSibling;
+  const arrow = header.querySelector('.phase-arrow');
+  const isOpen = tasks.classList.contains('open');
+  tasks.classList.toggle('open', !isOpen);
+  arrow.textContent = isOpen ? '▶' : '▼';
+}
+
+// 스크롤 페이드인
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
