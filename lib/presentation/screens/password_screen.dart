@@ -1,72 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/password_card.dart';
-import 'package:bol_il_bwa/data/mock/mock_data.dart';
+import 'package:bol_il_bwa/application/view_models/password_view_model.dart';
 
-class PasswordScreen extends StatefulWidget {
+class PasswordScreen extends ConsumerStatefulWidget {
   const PasswordScreen({Key? key}) : super(key: key);
 
   @override
-  State<PasswordScreen> createState() => _PasswordScreenState();
+  ConsumerState<PasswordScreen> createState() => _PasswordScreenState();
 }
 
-class _PasswordScreenState extends State<PasswordScreen> {
-  final TextEditingController _toiletSearchController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  String? _selectedToiletId;
-
+class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   @override
-  void dispose() {
-    _toiletSearchController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(passwordViewModelProvider.notifier).loadLockedToilets();
+    });
   }
 
-  void _submitPassword() {
-    if (_selectedToiletId == null) {
+  void _submitPassword() async {
+    final viewModel = ref.read(passwordViewModelProvider.notifier);
+    final success = await viewModel.submitPassword();
+
+    if (!mounted) return;
+
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('화장실을 선택해주세요'),
+          content: Text('비밀번호가 공유되었습니다'),
           duration: Duration(seconds: 2),
         ),
       );
-      return;
+      viewModel.resetForm();
+    } else {
+      final state = ref.read(passwordViewModelProvider);
+      if (state.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.error!),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
-
-    if (_passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('비밀번호를 입력해주세요'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('비밀번호가 공유되었습니다'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    _toiletSearchController.clear();
-    _passwordController.clear();
-    setState(() {
-      _selectedToiletId = null;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final lockedToilets =
-        MockData.toilets.where((t) => t.isLocked).toList();
-    final selectedToilet = _selectedToiletId != null
-        ? MockData.getToiletById(_selectedToiletId!)
-        : null;
-    final passwordsForSelected = _selectedToiletId != null
-        ? MockData.getPasswordsForToilet(_selectedToiletId!)
-        : [];
+    final state = ref.watch(passwordViewModelProvider);
+    final viewModel = ref.read(passwordViewModelProvider.notifier);
+    final selectedToilet = viewModel.getSelectedToilet();
 
     return Scaffold(
       appBar: AppBar(
@@ -93,7 +78,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
                   text: selectedToilet?.name ?? '',
                 ),
                 onTap: () {
-                  _showToiletPicker(context, lockedToilets);
+                  _showToiletPicker(context, state.lockedToilets, viewModel);
                 },
                 decoration: InputDecoration(
                   hintText: '화장실을 선택하세요',
@@ -169,7 +154,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: _passwordController,
+                onChanged: viewModel.setPassword,
                 decoration: InputDecoration(
                   hintText: '예: 1234',
                   border: OutlineInputBorder(
@@ -206,61 +191,84 @@ class _PasswordScreenState extends State<PasswordScreen> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _submitPassword,
+                  onPressed: state.isSubmitting ? null : _submitPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    '공유하기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: state.isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          '공유하기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
-              const SizedBox(height: 32),
-              if (selectedToilet != null) ...[
-                Text(
-                  '공유된 비밀번호 (${passwordsForSelected.length}개)',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (passwordsForSelected.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Center(
-                      child: Text(
-                        '공유된 비밀번호가 없습니다',
-                        style: TextStyle(
-                          color: AppTheme.textSecondaryColor,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ...passwordsForSelected.map((pw) {
-                    return PasswordCard(
-                      passwordShare: pw,
-                      onLikePressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('좋아요가 추가되었습니다'),
-                            duration: Duration(seconds: 1),
+              if (selectedToilet != null)
+                FutureBuilder<List>(
+                  future: viewModel.getPasswordsForToilet(selectedToilet.id),
+                  builder: (context, snapshot) {
+                    final passwords = snapshot.data ?? [];
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 32),
+                        Text(
+                          '공유된 비밀번호 (${passwords.length}개)',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(height: 12),
+                        if (passwords.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            child: Center(
+                              child: Text(
+                                '공유된 비밀번호가 없습니다',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondaryColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ...passwords.map((pw) {
+                            return PasswordCard(
+                              passwordShare: pw,
+                              onLikePressed: () async {
+                                await viewModel.likePassword(pw.id);
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('좋아요가 추가되었습니다'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                            );
+                          }),
+                      ],
                     );
-                  }),
-              ],
+                  },
+                ),
             ],
           ),
         ),
@@ -269,7 +277,10 @@ class _PasswordScreenState extends State<PasswordScreen> {
   }
 
   void _showToiletPicker(
-      BuildContext context, List<dynamic> lockedToilets) {
+    BuildContext context,
+    List<dynamic> lockedToilets,
+    dynamic viewModel,
+  ) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -290,9 +301,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
                 title: Text(toilet.name),
                 subtitle: Text(toilet.address),
                 onTap: () {
-                  setState(() {
-                    _selectedToiletId = toilet.id;
-                  });
+                  viewModel.selectToilet(toilet.id);
                   Navigator.pop(context);
                 },
               );

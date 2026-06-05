@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>볼일봐 🚻 — 주변 공중화장실 찾기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 헤더 -->
+<header id="header">
+  <h1>🚻 볼일봐</h1>
+  <div id="search-box">
+    <span>🔍</span>
+    <input id="search-input" type="text" placeholder="화장실 검색..." autocomplete="off"
+      oninput="handleSearch(this.value)">
+  </div>
+  <button id="btn-locate" onclick="goToMyLocation()" title="내 위치">📍</button>
+</header>
+
+<!-- 지도 -->
+<div id="map"></div>
+
+<!-- 하단 시트 -->
+<div id="bottom-sheet">
+  <div id="sheet-handle"></div>
+  <div id="sheet-header">
+    <span id="toilet-count">화장실 로딩 중...</span>
+  </div>
+  <div class="filter-tabs">
+    <button class="filter-btn active" onclick="setFilter('all', this)">전체</button>
+    <button class="filter-btn" onclick="setFilter('fav', this)">❤️ 즐겨찾기</button>
+  </div>
+  <div id="toilet-list"></div>
+</div>
+
+<!-- 상세 패널 -->
+<div id="detail-panel">
+  <div id="detail-header">
+    <button id="btn-close-detail" onclick="closeDetail()">←</button>
+    <div id="detail-header-info">
+      <div id="detail-name">화장실 이름</div>
+      <div id="detail-addr"></div>
+      <div id="detail-rating"></div>
+    </div>
+    <button id="detail-fav-btn" onclick="toggleFavFromDetail()">🤍</button>
+  </div>
+  <div id="detail-meta">
+    <div id="detail-hours"></div>
+    <div id="detail-tel"></div>
+    <div id="detail-status"></div>
+    <div id="detail-disabled"></div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="reviews" onclick="switchTab('reviews')">⭐ 리뷰</button>
+    <button class="tab-btn" data-tab="password" onclick="switchTab('password')">🔑 비번 공유</button>
+  </div>
+
+  <!-- 리뷰 탭 -->
+  <div id="tab-reviews" class="tab-content active">
+    <div class="review-form">
+      <div class="star-row">
+        <span class="star-input" onclick="setRating(1)">★</span>
+        <span class="star-input" onclick="setRating(2)">★</span>
+        <span class="star-input" onclick="setRating(3)">★</span>
+        <span class="star-input" onclick="setRating(4)">★</span>
+        <span class="star-input" onclick="setRating(5)">★</span>
+      </div>
+      <textarea id="review-input" placeholder="청결도 솔직 리뷰를 남겨주세요..."></textarea>
+      <button class="btn-submit" onclick="submitReview()">리뷰 등록</button>
+    </div>
+    <div id="reviews-container"></div>
+  </div>
+
+  <!-- 비번 탭 -->
+  <div id="tab-password" class="tab-content">
+    <div class="review-form">
+      <input id="password-input" type="text" placeholder="비밀번호 입력 (예: 1234)" maxlength="20">
+      <button class="btn-submit" onclick="submitPassword()">비번 공유</button>
+    </div>
+    <div id="passwords-container"></div>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div id="loading-text">카카오 지도 불러오는 중...</div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<!-- 검색 핸들러 -->
+<script>
+function handleSearch(query) {
+  if (!allToilets.length) return;
+  const q = query.trim().toLowerCase();
+  if (!q) { updateList(); return; }
+  const filtered = allToilets.filter(t =>
+    t.name.toLowerCase().includes(q) || t.address.toLowerCase().includes(q) || t.gu.toLowerCase().includes(q)
+  );
+  const list = document.getElementById('toilet-list');
+  const countEl = document.getElementById('toilet-count');
+  countEl.textContent = `검색 결과 ${filtered.length}개`;
+  list.innerHTML = filtered.slice(0, 50).map(t => `
+    <div class="toilet-item" onclick="openDetail(allToilets.find(x=>x.id==='${t.id}'))">
+      <div class="toilet-item-icon">🚻</div>
+      <div class="toilet-item-info">
+        <div class="toilet-item-name">${t.name}</div>
+        <div class="toilet-item-addr">${t.address || t.gu}</div>
+      </div>
+      <div class="toilet-item-dist">${t.gu}</div>
+    </div>
+  `).join('');
+}
+</script>
+
+<!-- config.js 먼저 로드 (API 키) -->
+<script src="js/config.js"></script>
+
+<!-- 카카오 지도 SDK (JS 키를 config에서 주입) -->
+<script>
+(function () {
+  console.log('[볼일봐] KAKAO_JS_KEY:', CONFIG.KAKAO_JS_KEY ? CONFIG.KAKAO_JS_KEY.slice(0,6) + '...' : '❌ 없음');
+
+  var s = document.createElement('script');
+  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + CONFIG.KAKAO_JS_KEY + '&libraries=services,clusterer&autoload=false';
+
+  s.onload = function () {
+    console.log('[볼일봐] 카카오 SDK 스크립트 로드 성공, kakao.maps.load() 호출');
+    kakao.maps.load(function () {
+      console.log('[볼일봐] 카카오 지도 초기화 완료 → initApp()');
+      document.getElementById('loading-text').textContent = '화장실 데이터 로딩 중...';
+      initApp();
+    });
+  };
+
+  s.onerror = function () {
+    console.error('[볼일봐] 카카오 SDK 로드 실패 — JS 키 또는 허용 도메인을 확인하세요');
+    document.getElementById('loading-text').textContent =
+      '❌ 카카오 지도 로드 실패\n카카오 디벨로퍼스에서 localhost 도메인을 등록해주세요';
+    document.getElementById('loading-text').style.color = '#f44336';
+  };
+
+  // 10초 타임아웃: SDK는 로드됐지만 kakao.maps.load() 콜백이 안 오는 경우
+  setTimeout(function () {
+    if (typeof kakao === 'undefined' || !document.getElementById('map').children.length) {
+      console.warn('[볼일봐] 타임아웃 — 카카오 지도가 응답하지 않음');
+      document.getElementById('loading-text').textContent =
+        '⚠️ 카카오 지도 응답 없음\n카카오 디벨로퍼스 › 내 앱 › 플랫폼 › Web에\nhttp://localhost:3000 을 추가해주세요';
+      document.getElementById('loading-text').style.whiteSpace = 'pre';
+    }
+  }, 10000);
+
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- 앱 스크립트 -->
+<script src="js/firebase.js"></script>
+<script src="js/api.js"></script>
+<script src="js/map.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "572356889580",
+    "project_id": "toilet-bolilbwa",
+    "storage_bucket": "toilet-bolilbwa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:572356889580:android:a3f0ebc02f0eca61b68ec9",
+        "android_client_info": {
+          "package_name": "com.example.toilet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "572356889580-bbn7hcbfn0jbr0tfnbjbo33npo5237lv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmK-AnM2QTyXspu7qAFIKe5f1xHk-OlxY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "572356889580-bbn7hcbfn0jbr0tfnbjbo33npo5237lv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

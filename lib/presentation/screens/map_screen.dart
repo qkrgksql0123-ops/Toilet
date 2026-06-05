@@ -1,22 +1,55 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/toilet_list_tile.dart';
 import 'package:bol_il_bwa/application/view_models/map_view_model.dart';
 import 'package:bol_il_bwa/domain/entities/toilet.dart';
 
-class MapScreen extends ConsumerWidget {
+class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends ConsumerState<MapScreen> {
+  KakaoMapController? _mapController;
+  List<Marker> _markers = [];
+
+  // 서울시청 기본 좌표
+  static const double _defaultLat = 37.5665;
+  static const double _defaultLng = 126.9780;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(mapViewModelProvider.notifier).loadAllToilets();
+    });
+  }
+
+  void _updateMarkers(List<Toilet> toilets) {
+    setState(() {
+      _markers = toilets.take(300).map((t) {
+        return Marker(
+          markerId: t.id,
+          latLng: LatLng(t.latitude, t.longitude),
+          infoWindowContent: t.name,
+        );
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(mapViewModelProvider);
     final viewModel = ref.read(mapViewModelProvider.notifier);
 
-    // 초기 로드 (한 번만)
     ref.listen(mapViewModelProvider, (previous, next) {
-      if (previous == null && next.toilets.isEmpty && !next.isLoading) {
-        Future.microtask(() => viewModel.loadAllToilets());
+      if (next.toilets.isNotEmpty && !next.isLoading) {
+        _updateMarkers(next.toilets);
       }
     });
 
@@ -48,38 +81,30 @@ class MapScreen extends ConsumerWidget {
       drawer: _buildDrawer(context),
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.1),
-                  AppTheme.surfaceColor,
-                ],
-              ),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    size: 64,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '지도가 표시됩니다',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // 카카오 지도
+          kIsWeb
+              ? _buildWebPlaceholder()
+              : KakaoMap(
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                  },
+                  center: LatLng(_defaultLat, _defaultLng),
+                  markers: _markers,
+                  onMarkerTap: (markerId, latLng, zoomLevel) {
+                    final toilet = state.toilets.firstWhere(
+                      (t) => t.id == markerId,
+                      orElse: () => state.toilets.first,
+                    );
+                    Navigator.of(context).pushNamed(
+                      '/toilet-detail',
+                      arguments: toilet.id,
+                    );
+                  },
+                ),
+          // 로딩 오버레이
+          if (state.isLoading)
+            const Center(child: CircularProgressIndicator()),
+          // 하단 드래그 시트
           DraggableScrollableSheet(
             initialChildSize: 0.3,
             minChildSize: 0.2,
@@ -155,6 +180,9 @@ class MapScreen extends ConsumerWidget {
                           distance: distance,
                           isFavorited: viewModel.isFavorited(toilet.id),
                           onTap: () {
+                            _mapController?.panTo(
+                              LatLng(toilet.latitude, toilet.longitude));
+                            _mapController?.setLevel(4);
                             Navigator.of(context).pushNamed(
                               '/toilet-detail',
                               arguments: toilet.id,
@@ -174,14 +202,35 @@ class MapScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('내 위치: 37.5547, 126.9706'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          _mapController?.panTo(LatLng(_defaultLat, _defaultLng));
+          _mapController?.setLevel(6);
         },
         child: const Icon(Icons.location_searching),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Widget _buildWebPlaceholder() {
+    return Container(
+      color: const Color(0xFFE8F5E9),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.map, size: 64, color: AppTheme.primaryColor),
+            const SizedBox(height: 12),
+            Text(
+              '카카오 지도는 앱에서 확인하세요',
+              style: TextStyle(color: AppTheme.textSecondaryColor),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -192,20 +241,14 @@ class MapScreen extends ConsumerWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-            ),
-            child: Column(
+            decoration: BoxDecoration(color: AppTheme.primaryColor),
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Icon(
-                  Icons.person,
-                  size: 48,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 8),
-                const Text(
+                Icon(Icons.person, size: 48, color: Colors.white),
+                SizedBox(height: 8),
+                Text(
                   '익명 사용자',
                   style: TextStyle(
                     color: Colors.white,
@@ -219,9 +262,7 @@ class MapScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.map),
             title: const Text('지도'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
           ),
           ListTile(
             leading: const Icon(Icons.favorite),
@@ -243,16 +284,12 @@ class MapScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('설정'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
           ),
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('정보'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
           ),
         ],
       ),
@@ -271,9 +308,7 @@ class _ToiletSearchDelegate extends SearchDelegate<String> {
     return [
       IconButton(
         icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
+        onPressed: () => query = '',
       ),
     ];
   }
@@ -282,9 +317,7 @@ class _ToiletSearchDelegate extends SearchDelegate<String> {
   Widget buildLeading(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, '');
-      },
+      onPressed: () => close(context, ''),
     );
   }
 
@@ -294,24 +327,7 @@ class _ToiletSearchDelegate extends SearchDelegate<String> {
         .where((item) =>
             item['toilet'].name.toLowerCase().contains(query.toLowerCase()))
         .toList();
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final item = results[index];
-        return ToiletListTile(
-          toilet: item['toilet'],
-          distance: item['distance'],
-          onTap: () {
-            close(context, item['toilet'].id);
-            Navigator.of(context).pushNamed(
-              '/toilet-detail',
-              arguments: item['toilet'].id,
-            );
-          },
-        );
-      },
-    );
+    return _buildList(context, results);
   }
 
   @override
@@ -320,11 +336,14 @@ class _ToiletSearchDelegate extends SearchDelegate<String> {
         .where((item) =>
             item['toilet'].name.toLowerCase().startsWith(query.toLowerCase()))
         .toList();
+    return _buildList(context, suggestions);
+  }
 
+  Widget _buildList(BuildContext context, List<Map<String, dynamic>> items) {
     return ListView.builder(
-      itemCount: suggestions.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = suggestions[index];
+        final item = items[index];
         return ListTile(
           leading: const Icon(Icons.location_on),
           title: Text(item['toilet'].name),

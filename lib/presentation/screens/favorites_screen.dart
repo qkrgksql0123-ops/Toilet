@@ -1,74 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/toilet_list_tile.dart';
 import 'package:bol_il_bwa/data/mock/mock_data.dart';
+import 'package:bol_il_bwa/application/view_models/favorites_view_model.dart';
 
-class FavoritesScreen extends StatefulWidget {
+class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
 
-  @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
-}
-
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  late Set<String> _favorites;
-
-  @override
-  void initState() {
-    super.initState();
-    _favorites = {'1', '3'};
-  }
-
-  void _toggleFavorite(String toiletId) {
-    setState(() {
-      if (_favorites.contains(toiletId)) {
-        _favorites.remove(toiletId);
-      } else {
-        _favorites.add(toiletId);
-      }
-    });
+  void _toggleFavorite(String toiletId, WidgetRef ref) {
+    final viewModel = ref.read(favoritesViewModelProvider.notifier);
+    viewModel.toggleFavorite(toiletId);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final favoritedToilets = MockData.toilets
-        .where((toilet) => _favorites.contains(toilet.id))
-        .toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(favoritesViewModelProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('즐겨찾기'),
         elevation: 2,
       ),
-      body: favoritedToilets.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              itemCount: favoritedToilets.length,
-              itemBuilder: (context, index) {
-                final toilet = favoritedToilets[index];
-                final distance = 0.5 + (index * 0.3);
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : state.favorites.isEmpty
+              ? _buildEmptyState(context)
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  itemCount: state.favorites.length,
+                  itemBuilder: (context, index) {
+                    final toilet = state.favorites[index];
+                    final distance = 0.5 + (index * 0.3);
 
-                return ToiletListTile(
-                  toilet: toilet,
-                  distance: distance,
-                  isFavorited: true,
-                  onTap: () {
-                    Navigator.of(context).pushNamed(
-                      '/toilet-detail',
-                      arguments: toilet.id,
+                    return ToiletListTile(
+                      toilet: toilet,
+                      distance: distance,
+                      isFavorited: true,
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          '/toilet-detail',
+                          arguments: toilet.id,
+                        );
+                      },
+                      onFavoriteTap: () {
+                        _toggleFavorite(toilet.id, ref);
+                      },
                     );
                   },
-                  onFavoriteTap: () {
-                    _toggleFavorite(toilet.id);
-                  },
-                );
-              },
-            ),
+                ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

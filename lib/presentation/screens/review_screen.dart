@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/rating_widget.dart';
+import 'package:bol_il_bwa/application/view_models/review_view_model.dart';
 
-class ReviewScreen extends StatefulWidget {
+class ReviewScreen extends ConsumerWidget {
   final String toiletId;
 
   const ReviewScreen({
@@ -10,53 +12,38 @@ class ReviewScreen extends StatefulWidget {
     required this.toiletId,
   }) : super(key: key);
 
-  @override
-  State<ReviewScreen> createState() => _ReviewScreenState();
-}
+  void _submitReview(BuildContext context, WidgetRef ref) async {
+    final viewModel = ref.read(reviewViewModelProvider.notifier);
+    final success = await viewModel.submitReview(toiletId);
 
-class _ReviewScreenState extends State<ReviewScreen> {
-  final TextEditingController _commentController = TextEditingController();
-  int _selectedRating = 0;
+    if (!context.mounted) return;
 
-  @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
-  }
-
-  void _submitReview() {
-    if (_selectedRating == 0) {
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('별점을 선택해주세요'),
+          content: Text('리뷰가 등록되었습니다'),
           duration: Duration(seconds: 2),
         ),
       );
-      return;
+      Navigator.pop(context);
+    } else {
+      final state = ref.read(reviewViewModelProvider);
+      if (state.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.error!),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
-
-    if (_commentController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('리뷰 내용을 입력해주세요'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('리뷰가 등록되었습니다'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    Navigator.pop(context);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(reviewViewModelProvider);
+    final viewModel = ref.read(reviewViewModelProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('리뷰 작성'),
@@ -77,22 +64,20 @@ class _ReviewScreenState extends State<ReviewScreen> {
               const SizedBox(height: 16),
               Center(
                 child: RatingWidget(
-                  initialRating: _selectedRating.toDouble(),
+                  initialRating: state.selectedRating.toDouble(),
                   readOnly: false,
                   size: 48,
                   onRatingChanged: (rating) {
-                    setState(() {
-                      _selectedRating = rating;
-                    });
+                    viewModel.setRating(rating);
                   },
                 ),
               ),
-              if (_selectedRating > 0)
+              if (state.selectedRating > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Center(
                     child: Text(
-                      _getRatingDescription(_selectedRating),
+                      _getRatingDescription(state.selectedRating),
                       style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textSecondaryColor,
@@ -110,7 +95,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: _commentController,
+                onChanged: viewModel.setComment,
                 maxLines: 6,
                 decoration: InputDecoration(
                   hintText: '화장실의 청결도, 편의시설, 기타 정보를 작성해주세요',
@@ -148,7 +133,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                '${_commentController.text.length}/500자',
+                '${state.comment.length}/500자',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppTheme.textSecondaryColor,
@@ -159,21 +144,33 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _submitReview,
+                  onPressed: state.isSubmitting
+                      ? null
+                      : () => _submitReview(context, ref),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    '리뷰 등록',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: state.isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          '리뷰 등록',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
