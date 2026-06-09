@@ -12,6 +12,11 @@ class MockData {
       address: '서울시 중구 한강로1가 1-4',
       avgRating: 4.5,
       isLocked: false,
+      openTime: '06:00',
+      closeTime: '23:00',
+      hasDisabled: true,
+      hasMale: true,
+      hasFemale: true,
     ),
     Toilet(
       id: '2',
@@ -21,6 +26,11 @@ class MockData {
       address: '서울시 중구 명동 50-1',
       avgRating: 3.8,
       isLocked: true,
+      openTime: '07:00',
+      closeTime: '22:00',
+      hasDisabled: false,
+      hasMale: true,
+      hasFemale: true,
     ),
     Toilet(
       id: '3',
@@ -30,6 +40,11 @@ class MockData {
       address: '서울시 강남구 강남역 대로 465',
       avgRating: 4.2,
       isLocked: false,
+      openTime: '00:00',
+      closeTime: '24:00',
+      hasDisabled: true,
+      hasMale: true,
+      hasFemale: true,
     ),
     Toilet(
       id: '4',
@@ -39,6 +54,9 @@ class MockData {
       address: '서울시 종로구 명륜4가 34',
       avgRating: 3.5,
       isLocked: false,
+      hasDisabled: false,
+      hasMale: true,
+      hasFemale: true,
     ),
     Toilet(
       id: '5',
@@ -48,6 +66,11 @@ class MockData {
       address: '서울시 마포구 홍대입구역 1번 출구',
       avgRating: 4.0,
       isLocked: true,
+      openTime: '06:00',
+      closeTime: '24:00',
+      hasDisabled: true,
+      hasMale: true,
+      hasFemale: true,
     ),
   ];
 

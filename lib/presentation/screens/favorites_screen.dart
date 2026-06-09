@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/toilet_list_tile.dart';
-import 'package:bol_il_bwa/data/mock/mock_data.dart';
 import 'package:bol_il_bwa/application/view_models/favorites_view_model.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -17,7 +17,8 @@ class FavoritesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(favoritesViewModelProvider);
 
-    return Scaffold(
+    return PointerInterceptor(
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('즐겨찾기'),
         elevation: 2,
@@ -49,7 +50,8 @@ class FavoritesScreen extends ConsumerWidget {
                     );
                   },
                 ),
-    );
+    ), // Scaffold
+    ); // PointerInterceptor
   }
 
   Widget _buildEmptyState(BuildContext context) {

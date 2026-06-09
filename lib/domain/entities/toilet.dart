@@ -6,6 +6,11 @@ class Toilet {
   final String address;
   final double avgRating;
   final bool isLocked;
+  final String? openTime;
+  final String? closeTime;
+  final bool hasDisabled;
+  final bool hasMale;
+  final bool hasFemale;
 
   Toilet({
     required this.id,
@@ -15,6 +20,11 @@ class Toilet {
     required this.address,
     required this.avgRating,
     required this.isLocked,
+    this.openTime,
+    this.closeTime,
+    this.hasDisabled = false,
+    this.hasMale = true,
+    this.hasFemale = true,
   });
 
   factory Toilet.fromMap(Map<String, dynamic> map) {
@@ -26,6 +36,11 @@ class Toilet {
       address: map['address'] as String,
       avgRating: (map['avgRating'] as num).toDouble(),
       isLocked: map['isLocked'] as bool,
+      openTime: map['openTime'] as String?,
+      closeTime: map['closeTime'] as String?,
+      hasDisabled: map['hasDisabled'] as bool? ?? false,
+      hasMale: map['hasMale'] as bool? ?? true,
+      hasFemale: map['hasFemale'] as bool? ?? true,
     );
   }
 
@@ -38,6 +53,11 @@ class Toilet {
       'address': address,
       'avgRating': avgRating,
       'isLocked': isLocked,
+      'openTime': openTime,
+      'closeTime': closeTime,
+      'hasDisabled': hasDisabled,
+      'hasMale': hasMale,
+      'hasFemale': hasFemale,
     };
   }
 
@@ -49,6 +69,11 @@ class Toilet {
     String? address,
     double? avgRating,
     bool? isLocked,
+    String? openTime,
+    String? closeTime,
+    bool? hasDisabled,
+    bool? hasMale,
+    bool? hasFemale,
   }) {
     return Toilet(
       id: id ?? this.id,
@@ -58,6 +83,11 @@ class Toilet {
       address: address ?? this.address,
       avgRating: avgRating ?? this.avgRating,
       isLocked: isLocked ?? this.isLocked,
+      openTime: openTime ?? this.openTime,
+      closeTime: closeTime ?? this.closeTime,
+      hasDisabled: hasDisabled ?? this.hasDisabled,
+      hasMale: hasMale ?? this.hasMale,
+      hasFemale: hasFemale ?? this.hasFemale,
     );
   }
 

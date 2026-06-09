@@ -81,3 +81,63 @@ class FavoritesState {
     );
   }
 }
+
+class ReviewScreenState {
+  final int selectedRating;
+  final String comment;
+  final bool isSubmitting;
+  final String? error;
+
+  const ReviewScreenState({
+    this.selectedRating = 0,
+    this.comment = '',
+    this.isSubmitting = false,
+    this.error,
+  });
+
+  ReviewScreenState copyWith({
+    int? selectedRating,
+    String? comment,
+    bool? isSubmitting,
+    String? error,
+  }) {
+    return ReviewScreenState(
+      selectedRating: selectedRating ?? this.selectedRating,
+      comment: comment ?? this.comment,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class PasswordScreenState {
+  final String? selectedToiletId;
+  final String password;
+  final List<Toilet> lockedToilets;
+  final bool isSubmitting;
+  final String? error;
+
+  const PasswordScreenState({
+    this.selectedToiletId,
+    this.password = '',
+    this.lockedToilets = const [],
+    this.isSubmitting = false,
+    this.error,
+  });
+
+  PasswordScreenState copyWith({
+    String? selectedToiletId,
+    String? password,
+    List<Toilet>? lockedToilets,
+    bool? isSubmitting,
+    String? error,
+  }) {
+    return PasswordScreenState(
+      selectedToiletId: selectedToiletId ?? this.selectedToiletId,
+      password: password ?? this.password,
+      lockedToilets: lockedToilets ?? this.lockedToilets,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      error: error ?? this.error,
+    );
+  }
+}

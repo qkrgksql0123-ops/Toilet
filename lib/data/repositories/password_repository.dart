@@ -2,6 +2,7 @@ import 'package:bol_il_bwa/domain/entities/password_share.dart';
 
 abstract class PasswordRepository {
   Future<List<PasswordShare>> getPasswordsByToiletId(String toiletId);
+  Future<List<PasswordShare>> getPasswordsByUserId(String userId);
 
   Future<PasswordShare?> getPasswordById(String passwordId);
 

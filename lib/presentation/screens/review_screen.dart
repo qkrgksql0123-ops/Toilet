@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/rating_widget.dart';
 import 'package:bol_il_bwa/application/view_models/review_view_model.dart';
@@ -44,7 +45,8 @@ class ReviewScreen extends ConsumerWidget {
     final state = ref.watch(reviewViewModelProvider);
     final viewModel = ref.read(reviewViewModelProvider.notifier);
 
-    return Scaffold(
+    return PointerInterceptor(
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('리뷰 작성'),
       ),
@@ -177,7 +179,8 @@ class ReviewScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ), // Scaffold
+    ); // PointerInterceptor
   }
 
   String _getRatingDescription(int rating) {

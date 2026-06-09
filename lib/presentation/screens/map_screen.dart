@@ -1,11 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kakao_map_plugin/kakao_map_plugin.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:bol_il_bwa/presentation/theme/app_theme.dart';
 import 'package:bol_il_bwa/presentation/widgets/toilet_list_tile.dart';
+import 'package:bol_il_bwa/presentation/widgets/kakao_map_widget.dart';
 import 'package:bol_il_bwa/application/view_models/map_view_model.dart';
-import 'package:bol_il_bwa/domain/entities/toilet.dart';
+import 'package:bol_il_bwa/application/view_models/favorites_view_model.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -15,10 +15,11 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  KakaoMapController? _mapController;
-  List<Marker> _markers = [];
+  final _mapController = KakaoMapController();
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+  bool _locating = false;
 
-  // 서울시청 기본 좌표
   static const double _defaultLat = 37.5665;
   static const double _defaultLng = 126.9780;
 
@@ -30,333 +31,315 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     });
   }
 
-  void _updateMarkers(List<Toilet> toilets) {
-    setState(() {
-      _markers = toilets.take(300).map((t) {
-        return Marker(
-          markerId: t.id,
-          latLng: LatLng(t.latitude, t.longitude),
-          infoWindowContent: t.name,
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    setState(() => _locating = true);
+    _mapController.getCurrentLocation(
+      onSuccess: (lat, lng) {
+        if (!mounted) return;
+        setState(() => _locating = false);
+        _mapController.showCurrentLocation(lat, lng);
+        _mapController.panTo(lat, lng);
+      },
+      onError: (e) {
+        if (!mounted) return;
+        setState(() => _locating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('위치 정보를 가져올 수 없습니다. 브라우저 위치 권한을 확인해주세요.')),
         );
-      }).toList();
-    });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mapViewModelProvider);
     final viewModel = ref.read(mapViewModelProvider.notifier);
-
-    ref.listen(mapViewModelProvider, (previous, next) {
-      if (next.toilets.isNotEmpty && !next.isLoading) {
-        _updateMarkers(next.toilets);
-      }
-    });
-
-    final toiletList = state.toilets
-        .asMap()
-        .entries
-        .map((entry) => {
-              'toilet': entry.value,
-              'distance': 0.5 + (entry.key * 0.3),
-            })
-        .toList();
+    // 즐겨찾기는 favoritesViewModelProvider를 단일 소스로 사용
+    ref.watch(favoritesViewModelProvider); // 상태 변경 시 리빌드 구독
+    final favoritesNotifier = ref.read(favoritesViewModelProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('볼일봐 🚻'),
-        elevation: 2,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              showSearch(
-                context: context,
-                delegate: _ToiletSearchDelegate(toiletList, viewModel),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // 지도 (전체 화면) - 이벤트가 iframe에 전달되도록 아래에 위치
+          Positioned.fill(
+            child: KakaoMapWidget(
+              centerLat: _defaultLat,
+              centerLng: _defaultLng,
+              markers: state.toilets,
+              controller: _mapController,
+              onMarkerTap: (toiletId) {
+                Navigator.of(context).pushNamed('/toilet-detail', arguments: toiletId);
+              },
+            ),
+          ),
+
+          // 상단 검색바 + 햄버거 - pointer interceptor로 지도 이벤트 차단 방지
+          SafeArea(
+            child: PointerInterceptor(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (ctx) => GestureDetector(
+                        onTap: () => Scaffold.of(ctx).openDrawer(),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+                          ),
+                          child: const Icon(Icons.menu_rounded, color: AppTheme.textPrimaryColor, size: 22),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: '화장실 검색',
+                            hintStyle: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+                            prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textSecondaryColor, size: 20),
+                            suffixIcon: _isSearching
+                                ? GestureDetector(
+                                    onTap: () {
+                                      _searchController.clear();
+                                      setState(() => _isSearching = false);
+                                      viewModel.loadAllToilets();
+                                    },
+                                    child: const Icon(Icons.close_rounded, color: AppTheme.textSecondaryColor, size: 18),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onChanged: (v) {
+                            setState(() => _isSearching = v.isNotEmpty);
+                            if (v.isEmpty) {
+                              viewModel.loadAllToilets();
+                            } else {
+                              viewModel.searchToilets(v);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 로딩 인디케이터
+          if (state.isLoading)
+            const Center(child: CircularProgressIndicator()),
+
+          // 하단 시트 - PointerInterceptor로 지도 이벤트와 분리
+          DraggableScrollableSheet(
+            initialChildSize: 0.3,
+            minChildSize: 0.12,
+            maxChildSize: 0.85,
+            builder: (context, scrollController) {
+              final toilets = state.toilets;
+              return PointerInterceptor(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4))],
+                  ),
+                  child: Column(
+                    children: [
+                      // 핸들
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, bottom: 4),
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDE1E7),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      // 헤더
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.wc_rounded, color: AppTheme.primaryColor, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              state.isLoading ? '불러오는 중...' : '화장실 ${toilets.length}개',
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.textPrimaryColor),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '내 주변',
+                                style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                      // 목록
+                      Expanded(
+                        child: state.isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : toilets.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.search_off_rounded, size: 48, color: Colors.grey[300]),
+                                        const SizedBox(height: 12),
+                                        Text('화장실이 없습니다', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    controller: scrollController,
+                                    padding: const EdgeInsets.only(top: 8, bottom: 24),
+                                    itemCount: toilets.length,
+                                    itemBuilder: (context, index) {
+                                      final toilet = toilets[index];
+                                      return ToiletListTile(
+                                        toilet: toilet,
+                                        distance: 0.5 + index * 0.3,
+                                        isFavorited: favoritesNotifier.isFavorited(toilet.id),
+                                        onTap: () {
+                                          _mapController.panTo(toilet.latitude, toilet.longitude);
+                                          Navigator.of(context).pushNamed(
+                                            '/toilet-detail',
+                                            arguments: toilet.id,
+                                          );
+                                        },
+                                        onFavoriteTap: () =>
+                                            favoritesNotifier.toggleFavorite(toilet.id, toilet),
+                                      );
+                                    },
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           ),
         ],
       ),
       drawer: _buildDrawer(context),
-      body: Stack(
-        children: [
-          // 카카오 지도
-          kIsWeb
-              ? _buildWebPlaceholder()
-              : KakaoMap(
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  center: LatLng(_defaultLat, _defaultLng),
-                  markers: _markers,
-                  onMarkerTap: (markerId, latLng, zoomLevel) {
-                    final toilet = state.toilets.firstWhere(
-                      (t) => t.id == markerId,
-                      orElse: () => state.toilets.first,
-                    );
-                    Navigator.of(context).pushNamed(
-                      '/toilet-detail',
-                      arguments: toilet.id,
-                    );
-                  },
-                ),
-          // 로딩 오버레이
-          if (state.isLoading)
-            const Center(child: CircularProgressIndicator()),
-          // 하단 드래그 시트
-          DraggableScrollableSheet(
-            initialChildSize: 0.3,
-            minChildSize: 0.2,
-            maxChildSize: 0.8,
-            builder: (context, scrollController) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        '주변 화장실 (${toiletList.length}개)',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (state.isLoading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (toiletList.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Text(
-                            '화장실이 없습니다',
-                            style: TextStyle(
-                              color: AppTheme.textSecondaryColor,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ...toiletList.map((item) {
-                        final toilet = item['toilet'] as Toilet;
-                        final distance = item['distance'] as double;
-                        return ToiletListTile(
-                          toilet: toilet,
-                          distance: distance,
-                          isFavorited: viewModel.isFavorited(toilet.id),
-                          onTap: () {
-                            _mapController?.panTo(
-                              LatLng(toilet.latitude, toilet.longitude));
-                            _mapController?.setLevel(4);
-                            Navigator.of(context).pushNamed(
-                              '/toilet-detail',
-                              arguments: toilet.id,
-                            );
-                          },
-                          onFavoriteTap: () {
-                            viewModel.toggleFavorite(toilet.id);
-                          },
-                        );
-                      }),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _mapController?.panTo(LatLng(_defaultLat, _defaultLng));
-          _mapController?.setLevel(6);
-        },
-        child: const Icon(Icons.location_searching),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  Widget _buildWebPlaceholder() {
-    return Container(
-      color: const Color(0xFFE8F5E9),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.map, size: 64, color: AppTheme.primaryColor),
-            const SizedBox(height: 12),
-            Text(
-              '카카오 지도는 앱에서 확인하세요',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
-            ),
-          ],
+      // GPS + 현재위치 FAB
+      floatingActionButton: PointerInterceptor(
+        child: FloatingActionButton(
+          onPressed: _locating ? null : _goToCurrentLocation,
+          backgroundColor: AppTheme.primaryColor,
+          child: _locating
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.my_location_rounded, color: Colors.white),
         ),
       ),
     );
   }
 
   Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+    return PointerInterceptor(
+      child: Drawer(
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: AppTheme.primaryColor),
-            child: const Column(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+            decoration: const BoxDecoration(color: AppTheme.primaryColor),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.person, size: 48, color: Colors.white),
-                SizedBox(height: 8),
-                Text(
-                  '익명 사용자',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  child: const Icon(Icons.person_rounded, size: 32, color: Colors.white),
                 ),
+                const SizedBox(height: 12),
+                const Text('볼일봐 🚻', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text('익명 사용자', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
               ],
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.map),
-            title: const Text('지도'),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text('즐겨찾기'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed('/favorites');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock),
-            title: const Text('비번 공유'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushNamed('/password');
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('설정'),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('정보'),
-            onTap: () => Navigator.pop(context),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _drawerItem(context, Icons.map_rounded, '지도', () => Navigator.pop(context)),
+                _drawerItem(context, Icons.bookmark_rounded, '즐겨찾기', () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushNamed('/favorites');
+                }),
+                const Divider(indent: 16, endIndent: 16),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Text('내 기록', style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                ),
+                _drawerItem(context, Icons.rate_review_rounded, '내 리뷰 기록', () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushNamed('/my-reviews');
+                }),
+                _drawerItem(context, Icons.lock_rounded, '내 비번 공유 기록', () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushNamed('/my-passwords');
+                }),
+                const Divider(indent: 16, endIndent: 16),
+                _drawerItem(context, Icons.info_outline_rounded, '정보', () => Navigator.pop(context)),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ToiletSearchDelegate extends SearchDelegate<String> {
-  final List<Map<String, dynamic>> toilets;
-  final dynamic viewModel;
-
-  _ToiletSearchDelegate(this.toilets, this.viewModel);
-
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () => query = '',
-      ),
-    ];
+    ), // Drawer
+    ); // PointerInterceptor
   }
 
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () => close(context, ''),
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    final results = toilets
-        .where((item) =>
-            item['toilet'].name.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-    return _buildList(context, results);
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    final suggestions = toilets
-        .where((item) =>
-            item['toilet'].name.toLowerCase().startsWith(query.toLowerCase()))
-        .toList();
-    return _buildList(context, suggestions);
-  }
-
-  Widget _buildList(BuildContext context, List<Map<String, dynamic>> items) {
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return ListTile(
-          leading: const Icon(Icons.location_on),
-          title: Text(item['toilet'].name),
-          subtitle: Text(item['toilet'].address),
-          onTap: () {
-            close(context, item['toilet'].id);
-            Navigator.of(context).pushNamed(
-              '/toilet-detail',
-              arguments: item['toilet'].id,
-            );
-          },
-        );
-      },
+  Widget _drawerItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.primaryColor, size: 22),
+      title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      horizontalTitleGap: 8,
     );
   }
 }

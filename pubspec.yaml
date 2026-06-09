@@ -55,6 +55,9 @@ dependencies:
   # 환경변수
   flutter_dotenv: ^5.2.0
 
+  # 지도 + Flutter 위젯 포인터 이벤트 충돌 방지
+  pointer_interceptor: ^0.9.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,4 +1,5 @@
 import 'package:bol_il_bwa/data/api/public_toilet_api.dart';
+import 'package:bol_il_bwa/data/mock/mock_data.dart';
 import 'package:bol_il_bwa/data/repositories/toilet_repository.dart';
 import 'package:bol_il_bwa/domain/entities/toilet.dart';
 import 'package:bol_il_bwa/domain/services/distance_service.dart';
@@ -12,15 +13,22 @@ class SeoulToiletRepository implements ToiletRepository {
 
   Future<List<Toilet>> _getAll() async {
     if (_cache != null) return _cache!;
-    final rows = await _api.fetchAllToilets();
-    _cache = rows
-        .where((r) => r['COORD_X'] != null && r['COORD_Y'] != null)
-        .map(_rowToToilet)
-        .toList();
+
+    try {
+      final rows = await _api.fetchAllToilets();
+      _cache = rows
+          .where((r) => r['COORD_X'] != null && r['COORD_Y'] != null)
+          .map(_rowToToilet)
+          .toList();
+    } catch (_) {
+      _cache = MockData.toilets;
+    }
     return _cache!;
   }
 
   Toilet _rowToToilet(Map<String, dynamic> row) {
+    final openTm = row['OPEN_TM'] as String?;
+    final closeTm = row['CLOSE_TM'] as String?;
     return Toilet(
       id: row['OBJECTID'].toString(),
       name: (row['CONTS_NAME'] as String?)?.isNotEmpty == true
@@ -33,6 +41,11 @@ class SeoulToiletRepository implements ToiletRepository {
           : (row['ADDR_OLD'] as String?) ?? '',
       avgRating: 0.0,
       isLocked: false,
+      openTime: (openTm?.isNotEmpty == true) ? openTm : null,
+      closeTime: (closeTm?.isNotEmpty == true) ? closeTm : null,
+      hasDisabled: (row['DISABLED_YN'] as String?) == 'Y',
+      hasMale: (row['MALE_YN'] as String?) != 'N',
+      hasFemale: (row['FEMALE_YN'] as String?) != 'N',
     );
   }
 

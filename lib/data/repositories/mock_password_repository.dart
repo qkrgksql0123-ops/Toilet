@@ -15,6 +15,12 @@ class MockPasswordRepository implements PasswordRepository {
   }
 
   @override
+  Future<List<PasswordShare>> getPasswordsByUserId(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _passwords.where((pw) => pw.userId == userId).toList();
+  }
+
+  @override
   Future<PasswordShare?> getPasswordById(String passwordId) async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {

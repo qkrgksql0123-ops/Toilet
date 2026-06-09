@@ -2,6 +2,7 @@ import 'package:bol_il_bwa/domain/entities/review.dart';
 
 abstract class ReviewRepository {
   Future<List<Review>> getReviewsByToiletId(String toiletId);
+  Future<List<Review>> getReviewsByUserId(String userId);
 
   Future<Review?> getReviewById(String reviewId);
 

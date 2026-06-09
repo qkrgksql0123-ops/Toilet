@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+
+    #zoom-controls {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 100;
+    }
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      background: #fff;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1565C0;
+      line-height: 1;
+    }
+    .zoom-btn:hover { background: #E3F2FD; }
+
+    #current-location-overlay {
+      width: 16px;
+      height: 16px;
+      background: #4285F4;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 6px rgba(66,133,244,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="zoom-controls">
+    <button class="zoom-btn" onclick="zoomIn()">+</button>
+    <button class="zoom-btn" onclick="zoomOut()">−</button>
+  </div>
+
+  <script>
+    var map;
+    var markers = [];
+    var currentLocationOverlay = null;
+    var pendingMarkers = null;
+
+    function initMap() {
+      var container = document.getElementById('map');
+      var options = {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 7
+      };
+      map = new kakao.maps.Map(container, options);
+
+      // 마우스 휠 줌 활성화
+      map.setZoomable(true);
+
+      window.parent.postMessage(JSON.stringify({ type: 'mapReady' }), '*');
+      if (pendingMarkers) {
+        addMarkers(pendingMarkers);
+        pendingMarkers = null;
+      }
+    }
+
+    function zoomIn() {
+      if (map) map.setLevel(map.getLevel() - 1);
+    }
+
+    function zoomOut() {
+      if (map) map.setLevel(map.getLevel() + 1);
+    }
+
+    function clearMarkers() {
+      markers.forEach(function (m) { m.setMap(null); });
+      markers = [];
+    }
+
+    function addMarkers(toilets) {
+      if (!map) { pendingMarkers = toilets; return; }
+      clearMarkers();
+      toilets.forEach(function (t) {
+        var position = new kakao.maps.LatLng(t.lat, t.lng);
+        var marker = new kakao.maps.Marker({ position: position, map: map });
+        var infowindow = new kakao.maps.InfoWindow({
+          content: '<div style="padding:6px 10px;font-size:13px;white-space:nowrap;font-family:sans-serif;">'
+            + (t.isLocked ? '🔒 ' : '🚻 ') + t.name + '</div>'
+        });
+        kakao.maps.event.addListener(marker, 'click', function () {
+          infowindow.open(map, marker);
+          window.parent.postMessage(
+            JSON.stringify({ type: 'markerTap', toiletId: t.id }), '*'
+          );
+        });
+        markers.push(marker);
+      });
+    }
+
+    function panTo(lat, lng) {
+      if (map) map.panTo(new kakao.maps.LatLng(lat, lng));
+    }
+
+    function showCurrentLocation(lat, lng) {
+      var position = new kakao.maps.LatLng(lat, lng);
+
+      if (currentLocationOverlay) {
+        currentLocationOverlay.setMap(null);
+      }
+
+      var content = document.createElement('div');
+      content.id = 'current-location-overlay';
+
+      currentLocationOverlay = new kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        zIndex: 10
+      });
+      currentLocationOverlay.setMap(map);
+      map.panTo(position);
+      map.setLevel(4);
+    }
+
+    window.addEventListener('message', function (e) {
+      try {
+        var data = JSON.parse(e.data);
+        if (!data || !data.type) return;
+        if (data.type === 'setMarkers') addMarkers(data.markers);
+        if (data.type === 'panTo') panTo(data.lat, data.lng);
+        if (data.type === 'showCurrentLocation') showCurrentLocation(data.lat, data.lng);
+      } catch (_) {}
+    });
+  </script>
+
+  <script
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc47ab05fe27efa71329056a3105aa8b&libraries=services&autoload=false"
+    onload="kakao.maps.load(initMap)"
+    onerror="console.error('Kakao SDK load failed')">
+  </script>
+</body>
+</html>

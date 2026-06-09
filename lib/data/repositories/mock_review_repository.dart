@@ -15,6 +15,12 @@ class MockReviewRepository implements ReviewRepository {
   }
 
   @override
+  Future<List<Review>> getReviewsByUserId(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _reviews.where((review) => review.userId == userId).toList();
+  }
+
+  @override
   Future<Review?> getReviewById(String reviewId) async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
